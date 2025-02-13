@@ -54,10 +54,9 @@ def execute_comm(com):
             memman.load(arg['file'], int(arg['address'])) 
             print('Loading completed.')
     else:
-        print(arg)
         print(f'Error: bad command "{name}"')
 
-print("PyEcEmulator terminal. \nYakuSoft inc© 2024–2025 Not all rights reserved.")
+print("FimEm terminal.")
 print("Please, write command:")
 
 while True:
