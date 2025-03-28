@@ -1,60 +1,49 @@
 import sys
-import os
-import time
-import random
-class Bus:
-    def __init__(self):
-        self.table = {
-        0x00: Hardware, 
-        0x01: GPU
-        }
-        
-    def interruption(self, inter, reg):
-        if inter in self.table:
-            id = reg.pop(0)
-            int_obj = self.table[inter]()
-            if id in int_obj.table:
-                tmp = int_obj.table[id](reg)
-                if tmp != None:
-                    return tmp
+import numpy as np
+import simpleaudio as sa
+from colorama import init, Back
 
-class Hardware:
-    def __init__(self):
-        self.table = {
-        0x00: self.halt, 
-        0x01: self.input_int, 
-        0x02: self.wait, 
-        0x03: self.random_number, 
-        0x04: self.input_str
-        }
-    
-    def halt(self, reg):
-        sys.exit()
-    
-    def input_int(self, reg):
-        inp = int(input())
-        return inp
-    
-    def wait(self, reg):
-        time.sleep(reg[0] / 1000)
-        
-    def random_number(self, reg):
-        return random.randint(reg[0], reg[1])
-        
-    def input_str(self, reg):
-        inp = [ord(c) for c in input()]
-        return inp
-    
-class GPU:
-    def __init__(self):
-        self.table = {
-        0x00: self.print_ascii, 
-        0x01: self.clear_console
-        }
-        
-        
-    def clear_console(self,reg):
-        os.system('clear')
-    
-    def print_ascii(self, reg):
-        print(chr(reg[2]), end='')
+# Инициализация colorama
+init(autoreset=True)
+
+def play_sound(frequency, duration):
+    # Генерация звуковой волны
+    sample_rate = 44100  # Частота дискретизации
+    t = np.linspace(0, duration, int(sample_rate * duration), False)  # Временные точки
+    wave = 0.5 * np.sin(2 * np.pi * frequency * t)  # Синусоидальная волна
+    audio = wave * 32767  # Приведение к диапазону int16
+    audio = audio.astype(np.int16)  # Преобразование в int16
+
+    # Воспроизведение звука
+    play_obj = sa.play_buffer(audio, 1, 2, sample_rate)
+    play_obj.wait_done()  # Ожидание завершения воспроизведения
+
+def print_color_strip(bit):
+    if bit == '0':
+        print(Back.BLUE + ' ' * 10)  # Синяя полоска
+        play_sound(440, 0.1)  # Звук для бита 0 (частота 440 Гц)
+    elif bit == '1':
+        print(Back.YELLOW + ' ' * 10)  # Желтая полоска
+        play_sound(550, 0.1)  # Звук для бита 1 (частота 550 Гц)
+
+def read_binary_file(file_path):
+    try:
+        with open(file_path, 'rb') as file:
+            byte = file.read(1)
+            while byte:
+                # Преобразуем байт в двоичную строку
+                bits = f"{int.from_bytes(byte, 'big'):08b}"
+                for bit in bits:
+                    print_color_strip(bit)
+                byte = file.read(1)
+    except FileNotFoundError:
+        print("Файл не найден. Пожалуйста, проверьте путь к файлу.")
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Использование: python script.py <путь_к_файлу>")
+    else:
+        file_path = sys.argv[1]
+        read_binary_file(file_path)
